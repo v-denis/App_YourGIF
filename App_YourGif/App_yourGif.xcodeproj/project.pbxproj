@@ -17,7 +17,6 @@
 		EB57AEAC24AF8FD000931F9D /* GifData.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB57AEAB24AF8FD000931F9D /* GifData.swift */; };
 		EB57AEAE24AF95BC00931F9D /* SingleGifViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB57AEAD24AF95BC00931F9D /* SingleGifViewController.swift */; };
 		EB57AEB124AF960900931F9D /* GifCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB57AEB024AF960900931F9D /* GifCell.swift */; };
-		EB57AEB324B0936900931F9D /* VCLoggingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB57AEB224B0936800931F9D /* VCLoggingViewController.swift */; };
 		EB57AEB624B0BE9300931F9D /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB57AEB524B0BE9300931F9D /* NetworkService.swift */; };
 		EB73B7FC24B1DAE2002626C6 /* GIFImageView + Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB73B7FB24B1DAE2002626C6 /* GIFImageView + Extension.swift */; };
 		EBCF435824B26EED00D16D4F /* UIViewController + Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBCF435724B26EED00D16D4F /* UIViewController + Extension.swift */; };
@@ -38,7 +37,6 @@
 		EB57AEAB24AF8FD000931F9D /* GifData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GifData.swift; sourceTree = "<group>"; };
 		EB57AEAD24AF95BC00931F9D /* SingleGifViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleGifViewController.swift; sourceTree = "<group>"; };
 		EB57AEB024AF960900931F9D /* GifCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GifCell.swift; sourceTree = "<group>"; };
-		EB57AEB224B0936800931F9D /* VCLoggingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VCLoggingViewController.swift; sourceTree = "<group>"; };
 		EB57AEB524B0BE9300931F9D /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
 		EB73B7FB24B1DAE2002626C6 /* GIFImageView + Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GIFImageView + Extension.swift"; sourceTree = "<group>"; };
 		EBCF435724B26EED00D16D4F /* UIViewController + Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController + Extension.swift"; sourceTree = "<group>"; };
@@ -114,7 +112,6 @@
 			children = (
 				EB57AE9924AF8C0200931F9D /* SearchViewController.swift */,
 				EB57AEAD24AF95BC00931F9D /* SingleGifViewController.swift */,
-				EB57AEB224B0936800931F9D /* VCLoggingViewController.swift */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
@@ -272,7 +269,6 @@
 				EB57AEB624B0BE9300931F9D /* NetworkService.swift in Sources */,
 				EB57AEB124AF960900931F9D /* GifCell.swift in Sources */,
 				EB57AE9624AF8C0200931F9D /* AppDelegate.swift in Sources */,
-				EB57AEB324B0936900931F9D /* VCLoggingViewController.swift in Sources */,
 				EBCF435824B26EED00D16D4F /* UIViewController + Extension.swift in Sources */,
 				EB57AEAC24AF8FD000931F9D /* GifData.swift in Sources */,
 				EB73B7FC24B1DAE2002626C6 /* GIFImageView + Extension.swift in Sources */,

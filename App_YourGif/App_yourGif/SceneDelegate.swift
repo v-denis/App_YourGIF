@@ -19,23 +19,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		window = UIWindow(frame: windowScene.coordinateSpace.bounds)
 		window?.windowScene = windowScene
 		let navVC = UINavigationController(rootViewController: SearchViewController())
-		
-		navVC.navigationBar.barTintColor = #colorLiteral(red: 0.1406435422, green: 0.01249524726, blue: 0.4902973561, alpha: 1)
-		navVC.navigationBar.backgroundColor = #colorLiteral(red: 0.1406435422, green: 0.01249524726, blue: 0.4902973561, alpha: 1)
-		navVC.navigationBar.tintColor = .white
-		navVC.navigationBar.barStyle = .black
-		navVC.navigationBar.prefersLargeTitles = true
 		window?.rootViewController = navVC
 		window?.makeKeyAndVisible()
-		
-		guard let statusBarFrame = windowScene.statusBarManager?.statusBarFrame else { return }
-		let customStatusBar = UIView(frame: statusBarFrame)
-		
-		
-		
-		customStatusBar.backgroundColor = #colorLiteral(red: 0.1406435422, green: 0.01249524726, blue: 0.4902973561, alpha: 1)
-		customStatusBar.isUserInteractionEnabled = false
-//		window?.addSubview(customStatusBar)
 	}
 
 	func sceneDidDisconnect(_ scene: UIScene) {

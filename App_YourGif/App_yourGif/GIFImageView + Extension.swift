@@ -14,11 +14,6 @@ class CustomGIFImageView: UIImageView, GIFAnimatable {
 	public lazy var animator: Animator? = {
 		return Animator(withDelegate: self)
 	}()
-	
-	override public func display(_ layer: CALayer) {
-		updateImageIfNeeded()
-	}
-	
 	private var gifImageUrlString: String?
 	private let gifCache: NSCache<NSString,NSData> = {
 		let cache = NSCache<NSString,NSData>()
@@ -47,34 +42,53 @@ class CustomGIFImageView: UIImageView, GIFAnimatable {
 		activityIndicator.frame = bounds
 		addSubview(activityIndicator)
 	}
+	override public func display(_ layer: CALayer) {
+		updateImageIfNeeded()
+	}
 	
-	
-	func loadGifAndStartAnimating(usingUrlString urlString: String) {
-		activityIndicator.startAnimating()
+	func loadGifData(fromUrlString urlString: String, completion: @escaping (Result<Data,Error>) -> Void) {
+		
 		gifImageUrlString = urlString
 		if let gifData = gifCache.object(forKey: NSString(string: urlString)) {
-			activityIndicator.stopAnimating()
-			self.animate(withGIFData: gifData as Data)
+			completion(.success(gifData as Data))
 		} else {
 			guard let url = URL(string: urlString) else { return }
 			URLSession.shared.dataTask(with: url) { (data, response, err) in
 				if let error = err {
-					print("loadGifAndStartAnimatingUsing: urlSessionError: ", error.localizedDescription)
+					print("loadGifData: urlSessionError: ", error.localizedDescription)
+					completion(.failure(error))
 					return
 				}
 				guard let gifData = data else { return }
-				DispatchQueue.main.async {
-					if self.gifImageUrlString == urlString {
-						self.activityIndicator.stopAnimating()
-						self.animate(withGIFData: gifData)
-						self.gifCache.setObject(gifData as NSData, forKey: NSString(string: urlString))
-					}
-					
+				if self.gifImageUrlString == urlString {
+					completion(.success(gifData))
+					self.gifCache.setObject(gifData as NSData, forKey: NSString(string: urlString))
 				}
 			}.resume()
 		}
-		
 	}
+	
+	
+	func loadGifAndStartAnimating(usingUrlString urlString: String) {
+		
+		gifImageUrlString = urlString
+		activityIndicator.startAnimating()
+		loadGifData(fromUrlString: urlString) { (result) in
+			switch result {
+				case .success(let gifData):
+					DispatchQueue.main.async {
+						if self.gifImageUrlString == urlString {
+							self.activityIndicator.stopAnimating()
+							self.animate(withGIFData: gifData)
+						}
+				}
+				case .failure(let error):
+					print("loadGifAndStartAnimatingUsing: urlSessionError: ", error.localizedDescription)
+			}
+		}
+	}
+	
+	
 	
 }
 

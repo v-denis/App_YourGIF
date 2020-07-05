@@ -11,13 +11,20 @@ import UIKit
 class SearchViewController: UIViewController {
 	
 	private let networkService = NetworkService()
-	private var gifStringUrls = [String]() {
+	private var gifData: GifData? {
 		didSet {
 			DispatchQueue.main.async {
 				self.resultCollectionView.reloadData()
 			}
 		}
 	}
+	private var downsizedGifStringUrls: [String] {
+		return gifData?.data?.compactMap { $0.downsizedGifUrlString } ?? [String]()
+	}
+	private var originalGifStringUrls: [String] {
+		return gifData?.data?.compactMap { $0.originalGifUrlString } ?? [String]()
+	}
+	
 	private let defaultSearchPhrase = "Cats"
 	private let searchController = UISearchController(searchResultsController: nil)
 	private lazy var resultCollectionView: UICollectionView = {
@@ -53,21 +60,20 @@ class SearchViewController: UIViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		view.backgroundColor = .black
-		view.tintColor = .white
 		setupNavigationBarAndSearchBar()
+		setupTapGesture()
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
 		setupLayout()
+		if downsizedGifStringUrls.isEmpty {
+			fetchGifs(withSearchText: defaultSearchPhrase)
+		}
 	}
 	
 	override func viewDidAppear(_ animated: Bool) {
 		super.viewDidAppear(animated)
-		if gifStringUrls.isEmpty {
-			fetchGifs(withSearchText: defaultSearchPhrase)
-		}
 	}
 	
 	override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -87,13 +93,13 @@ class SearchViewController: UIViewController {
 extension SearchViewController {
 	
 	private func setupLayout() {
+		view.backgroundColor = .black
+		view.tintColor = .white
 		view.addSubview(resultCollectionView)
-		
 		NSLayoutConstraint.activate([
 			resultCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
 			resultCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
 		])
-		
 		setupSideAnchorsFor(orientation: UIDevice.current.orientation)
 	}
 	
@@ -118,31 +124,17 @@ extension SearchViewController {
 	}
 	
 	private func setupNavigationBarAndSearchBar() {
-		
 		navigationItem.hidesSearchBarWhenScrolling = false
 		searchController.hidesNavigationBarDuringPresentation = true
 		searchController.obscuresBackgroundDuringPresentation = false
 		searchController.searchBar.delegate = self
 		searchController.searchBar.tintColor = UIColor(named: "alwaysWhite")
 		searchController.searchBar.searchTextField.textColor = UIColor(named: "alwaysWhite")
-		searchController.searchBar.searchTextField.backgroundColor = UIColor(named: "textFieldColor") 
+		searchController.searchBar.searchTextField.backgroundColor = UIColor(named: "textFieldColor")
 		searchController.searchBar.searchTextField.tintColor = .orange
-		searchController.searchBar.searchTextField.tokenBackgroundColor = UIColor(named: "alwaysWhite")
-		searchController.searchBar.searchTextField.attributedPlaceholder = NSAttributedString(string: "Search GIF's", attributes: [.foregroundColor:UIColor.lightGray])
-		searchController.searchBar.searchTextField.typingAttributes = [.foregroundColor:UIColor(named: "alwaysWhite")!]
-
 		navigationItem.searchController = searchController
 		navigationItem.backBarButtonItem = UIBarButtonItem(title: "Search", style: .plain, target: self, action: nil)
-
-		navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.1406435422, green: 0.01249524726, blue: 0.4902973561, alpha: 1)
-		navigationController?.navigationBar.backgroundColor = #colorLiteral(red: 0.1406435422, green: 0.01249524726, blue: 0.4902973561, alpha: 1)
-		navigationController?.navigationBar.tintColor = UIColor(named: "alwaysWhite")
-		navigationController?.navigationBar.barStyle = .black
 		navigationController?.navigationBar.shadowImage = UIImage()
-
-		navigationController?.navigationItem.titleView?.tintColor = UIColor(named: "alwaysWhite")
-		navigationController?.navigationItem.titleView?.backgroundColor = UIColor(named: "alwaysWhite")
-		
 		configureNavigationBar(largeTitleColor: UIColor(named: "alwaysWhite")!, backgoundColor: #colorLiteral(red: 0.1406435422, green: 0.01249524726, blue: 0.4902973561, alpha: 1), tintColor: UIColor(named: "alwaysWhite")!, title: defaultSearchPhrase, preferredLargeTitle: true)
 	}
 	
@@ -153,18 +145,17 @@ extension SearchViewController {
 extension SearchViewController: UICollectionViewDataSource {
 	
 	func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-		return gifStringUrls.count
+		return downsizedGifStringUrls.count
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: GifCell.reuseId, for: indexPath) as! GifCell
-		let cellUrlString = gifStringUrls[indexPath.row]
+		let cellUrlString = downsizedGifStringUrls[indexPath.row]
 		cell.gifStringUrl = cellUrlString
 		return cell
 	}
 	
 
-	
 }
 
 
@@ -173,7 +164,7 @@ extension SearchViewController: UICollectionViewDelegate {
 	
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		let destVC = SingleGifViewController()
-		let selectedUrlString = gifStringUrls[indexPath.row]
+		let selectedUrlString = originalGifStringUrls[indexPath.row]
 		destVC.gifUrlString = selectedUrlString
 		navigationController?.pushViewController(destVC, animated: true)
 	}
@@ -208,9 +199,8 @@ extension SearchViewController: UICollectionViewDelegateFlowLayout {
 extension SearchViewController {
 	
 	private func fetchGifs(withSearchText text: String) {
-		networkService.searchGifs(withPhrase: text) { (gifData) in
-			guard let fetchedGifData = gifData.data else { return }
-			self.gifStringUrls = fetchedGifData.compactMap { $0.downsizedGifUrlString }
+		networkService.searchGifs(withPhrase: text) { (fetchedGifData) in
+			self.gifData = fetchedGifData
 		}
 	}
 	
@@ -222,14 +212,53 @@ extension SearchViewController: UISearchBarDelegate {
 	
 	func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
 		guard let inputText = searchBar.text, !inputText.isEmpty else { return }
-		fetchGifs(withSearchText: inputText)
-		searchBar.text = ""
 		navigationItem.title = inputText
-		searchController.isActive = false
 		searchBar.endEditing(true)
+		searchController.isActive = false
+	}
+	
+	func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+		guard !searchText.isEmpty else {
+			showDefaultResults()
+			return
+		}
+		gifData = nil
+		fetchGifs(withSearchText: searchText)
+	}
+	
+	func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+		if navigationItem.title != defaultSearchPhrase {
+			showDefaultResults()
+		}
+		searchBar.endEditing(true)
+		searchController.isActive = false
+	}
+	
+	private func showDefaultResults() {
+		gifData = nil
+		fetchGifs(withSearchText: defaultSearchPhrase)
+		searchController.searchBar.text = ""
+		navigationItem.title = defaultSearchPhrase
 	}
 	
 }
+
+//MARK: - UITapGesture
+extension SearchViewController {
+	
+	private func setupTapGesture() {
+		let tapGesture = UITapGestureRecognizer(target: self, action: #selector(tapGestureHandler(_:)))
+		tapGesture.numberOfTapsRequired = 2
+		resultCollectionView.addGestureRecognizer(tapGesture)
+	}
+	
+	@objc func tapGestureHandler(_ sender: UITapGestureRecognizer) {
+		searchController.searchBar.endEditing(true)
+		searchController.isActive = false
+	}
+	
+}
+
 
 
 /*

@@ -17,10 +17,20 @@ class GifCell: UICollectionViewCell {
 			gifImageView.reloadInputViews()
 			gifImageView.stopAnimating()
 			guard let urlString = gifStringUrl else { return }
-			gifImageView.loadGifAndStartAnimating(usingUrlString: urlString)
+			activityIndicator.startAnimating()
+			fetchGifData(from: urlString)
 		}
 	}
-	let gifImageView: CustomGIFImageView = {
+	private var gifData: Data? {
+		didSet {
+			guard let animatingData = gifData else { return }
+			DispatchQueue.main.async {
+				self.activityIndicator.stopAnimating()
+				self.gifImageView.animate(withGIFData: animatingData)
+			}
+		}
+	}
+	private let gifImageView: CustomGIFImageView = {
 		let giv = CustomGIFImageView(frame: .zero)
 		giv.translatesAutoresizingMaskIntoConstraints = false
 		giv.contentMode = .scaleAspectFit
@@ -29,9 +39,11 @@ class GifCell: UICollectionViewCell {
 		giv.layer.cornerRadius = 12
 		return giv
 	}()
-	let activityIndicator: UIActivityIndicatorView = {
+	private let activityIndicator: UIActivityIndicatorView = {
 		let ai = UIActivityIndicatorView(style: .medium)
 		ai.tintColor = .lightGray
+		ai.color = .white
+		ai.translatesAutoresizingMaskIntoConstraints = false
 		ai.hidesWhenStopped = true
 		return ai
 	}()
@@ -61,17 +73,31 @@ class GifCell: UICollectionViewCell {
 		layer.cornerRadius = 12
 		layer.borderWidth = 2
 		addSubview(gifImageView)
-		
-//		activityIndicator.center = center
-//		addSubview(activityIndicator)
+		addSubview(activityIndicator)
 		
 		NSLayoutConstraint.activate([
 			gifImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
 			gifImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
 			gifImageView.widthAnchor.constraint(equalTo: widthAnchor),
-			gifImageView.heightAnchor.constraint(equalTo: heightAnchor)
+			gifImageView.heightAnchor.constraint(equalTo: heightAnchor),
+			activityIndicator.centerXAnchor.constraint(equalTo: centerXAnchor),
+			activityIndicator.centerYAnchor.constraint(equalTo: centerYAnchor)
 		])
 	}
+	
+	
+	private func fetchGifData(from urlString: String) {
+		gifImageView.loadGifData(fromUrlString: urlString) { (result) in
+			switch result {
+				case .success(let fetchedGifData):
+					self.gifData = fetchedGifData
+				case .failure(let error):
+					//Error handling
+					print(error.localizedDescription)
+			}
+		}
+	}
+	
 	
 	
 }
