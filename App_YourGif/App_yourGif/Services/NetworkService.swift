@@ -14,20 +14,39 @@ enum Language: String {
 	case unknown
 }
 
+enum SearchGifError: String {
+	case badInternetConnection = "The request timed out."
+	case noInternetConnection = "The Internet connection appears to be offline."
+}
+
+protocol HandleNetworkErrorsDelegate: class {
+	func showBadConnectionAlert()
+	func showNoInternetAlert()
+}
+
 class NetworkService {
 	
 	private let apiKey = "YFsBAOyyd4PtFMtBoy3ajbyaDDWI9r74"
 	private var baseUrlString: String {
 		return "https://api.giphy.com/v1/gifs/search?api_key=\(apiKey)&limit=24"
 	}
+	private var searchPhrase: String = ""
+	weak var delegate: HandleNetworkErrorsDelegate?
 	
 	func searchGifs(withPhrase phrase: String, completion: @escaping (GifData) -> ()) {
-
+		self.searchPhrase = phrase
 		if let url = generateQuerySearchUrl(from: phrase) {
 			URLSession.shared.dataTask(with: url) { (data, response, err) in
+				
 				if let error = err {
-					//Error handling
-					print(error.localizedDescription)
+					switch error.localizedDescription {
+						case SearchGifError.noInternetConnection.rawValue:
+							self.delegate?.showNoInternetAlert()
+						case SearchGifError.badInternetConnection.rawValue:
+							self.delegate?.showBadConnectionAlert()
+						default:
+							print("NetworkService: searchGifs: URLSession uknwown error: ", error.localizedDescription)
+					}
 					return
 				}
 				
@@ -37,7 +56,9 @@ class NetworkService {
 				
 				do {
 					let gifData = try JSONDecoder().decode(GifData.self, from: jsonData)
-					completion(gifData)
+					if self.searchPhrase == phrase {
+						completion(gifData)
+					}
 				} catch let jsonError {
 					print("JSON decode error: ", jsonError.localizedDescription)
 					//Error handling
@@ -66,6 +87,7 @@ class NetworkService {
 				completion(gifData)
 			}.resume()
 		} else {
+			print("Error --> NetworkService: fetchGifData: Can't fetch gif data")
 			//Error handling
 		}
 	}
@@ -73,8 +95,11 @@ class NetworkService {
 	
 	private func generateQuerySearchUrl(from phrase: String) -> URL? {
 		//		CFStringTokenizerCopyBestStringLanguage(phrase as CFString, CFRange(location: 0, length: phrase.count))
-		let searchPhrase = phrase.split(separator: " ").joined(separator: "+")
-		let language = determinePhraseLanguage(phrase: phrase)
+		var searchPhrase = phrase
+		if phrase.contains(" ") {
+			searchPhrase = phrase.split(separator: " ").joined(separator: "+")
+		}
+		let language = determinePhraseLanguage(phrase: searchPhrase)
 		guard language != Language.unknown else { return nil }
 		let resultUrlString = baseUrlString + "&q=\(searchPhrase)" + "&lang=\(language)"
 		guard let urlAllowedString = resultUrlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }

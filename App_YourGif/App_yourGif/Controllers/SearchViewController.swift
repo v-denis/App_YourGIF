@@ -10,11 +10,20 @@ import UIKit
 
 class SearchViewController: UIViewController {
 	
+	private let emptyResultView = EmptyResultView(frame: .zero)
+	lazy var badConnectionView: BadConnectionView = {
+		let viewFrame = CGRect(x: 0, y: view.frame.height, width: view.frame.width, height: 45)
+		let bcv = BadConnectionView(frame: viewFrame, type: .badConnection)
+		bcv.isHidden = true
+		view.addSubview(bcv)
+		return bcv
+	}()
 	private let networkService = NetworkService()
 	private var gifData: GifData? {
 		didSet {
 			DispatchQueue.main.async {
 				self.resultCollectionView.reloadData()
+				self.showEmptyResultView(ofGifData: self.gifData)
 			}
 		}
 	}
@@ -24,7 +33,6 @@ class SearchViewController: UIViewController {
 	private var originalGifStringUrls: [String] {
 		return gifData?.data?.compactMap { $0.originalGifUrlString } ?? [String]()
 	}
-	
 	private let defaultSearchPhrase = "Cats"
 	private let searchController = UISearchController(searchResultsController: nil)
 	private lazy var resultCollectionView: UICollectionView = {
@@ -60,6 +68,7 @@ class SearchViewController: UIViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		configuratingElements()
 		setupNavigationBarAndSearchBar()
 		setupTapGesture()
 	}
@@ -89,20 +98,32 @@ class SearchViewController: UIViewController {
 
 }
 
-//MARK: - SearchViewController subviews layout and configuration
+//MARK: - SearchViewController subviews layout and items configuration
 extension SearchViewController {
 	
 	private func setupLayout() {
 		view.backgroundColor = .black
 		view.tintColor = .white
 		view.addSubview(resultCollectionView)
+		emptyResultView.translatesAutoresizingMaskIntoConstraints = false
+		resultCollectionView.addSubview(emptyResultView)
+		
 		NSLayoutConstraint.activate([
 			resultCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-			resultCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+			resultCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+			emptyResultView.centerXAnchor.constraint(equalTo: resultCollectionView.centerXAnchor),
+			emptyResultView.topAnchor.constraint(equalTo: resultCollectionView.topAnchor, constant: 64),
+			emptyResultView.widthAnchor.constraint(equalTo: resultCollectionView.widthAnchor, multiplier: 0.3),
+			emptyResultView.heightAnchor.constraint(equalTo: emptyResultView.widthAnchor)
 		])
+		
+		searchController.isActive = false
 		setupSideAnchorsFor(orientation: UIDevice.current.orientation)
 	}
 	
+	private func configuratingElements() {
+		networkService.delegate = self
+	}
 	
 	private func setupSideAnchorsFor(orientation: UIDeviceOrientation) {
 		switch orientation {
@@ -123,6 +144,13 @@ extension SearchViewController {
 		activeAnchors.forEach { $0.isActive = true }
 	}
 	
+	private func searchBarFinishEditingAndChangeTitle(for searchText: String?) {
+		guard let text = searchText, !text.isEmpty else { return }
+		navigationItem.title = text
+		searchController.searchBar.endEditing(true)
+		searchController.isActive = false
+	}
+	
 	private func setupNavigationBarAndSearchBar() {
 		navigationItem.hidesSearchBarWhenScrolling = false
 		searchController.hidesNavigationBarDuringPresentation = true
@@ -138,6 +166,13 @@ extension SearchViewController {
 		configureNavigationBar(largeTitleColor: UIColor(named: "alwaysWhite")!, backgoundColor: #colorLiteral(red: 0.1406435422, green: 0.01249524726, blue: 0.4902973561, alpha: 1), tintColor: UIColor(named: "alwaysWhite")!, title: defaultSearchPhrase, preferredLargeTitle: true)
 	}
 	
+	private func showEmptyResultView(ofGifData gifData: GifData?) {
+		guard gifData != nil else { return }
+		if let dataItems = gifData!.data {
+			emptyResultView.isHidden = (dataItems.count == 0) ? false : true
+		}
+		
+	}
 }
 
 
@@ -166,6 +201,9 @@ extension SearchViewController: UICollectionViewDelegate {
 		let destVC = SingleGifViewController()
 		let selectedUrlString = originalGifStringUrls[indexPath.row]
 		destVC.gifUrlString = selectedUrlString
+		if searchController.searchBar.isFirstResponder {
+			searchController.searchBar.endEditing(true)
+		}
 		navigationController?.pushViewController(destVC, animated: true)
 	}
 }
@@ -211,10 +249,7 @@ extension SearchViewController {
 extension SearchViewController: UISearchBarDelegate {
 	
 	func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-		guard let inputText = searchBar.text, !inputText.isEmpty else { return }
-		navigationItem.title = inputText
-		searchBar.endEditing(true)
-		searchController.isActive = false
+		searchBarFinishEditingAndChangeTitle(for: searchBar.text)
 	}
 	
 	func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
@@ -223,6 +258,7 @@ extension SearchViewController: UISearchBarDelegate {
 			return
 		}
 		gifData = nil
+		navigationItem.title = searchText
 		fetchGifs(withSearchText: searchText)
 	}
 	
@@ -253,13 +289,53 @@ extension SearchViewController {
 	}
 	
 	@objc func tapGestureHandler(_ sender: UITapGestureRecognizer) {
-		searchController.searchBar.endEditing(true)
-		searchController.isActive = false
+		guard searchController.isActive else { return }
+		guard searchController.searchBar.text != "" else {
+			searchController.searchBar.endEditing(true)
+			searchController.isActive = false
+			return
+		}
+		searchBarFinishEditingAndChangeTitle(for: searchController.searchBar.text)
 	}
 	
 }
 
-
+//MARK: - HandleNetworkErrorsDelegate
+extension SearchViewController: HandleNetworkErrorsDelegate {
+	
+	func showNoInternetAlert() {
+		DispatchQueue.main.async {
+			self.badConnectionView.viewType = .noInternet
+			self.startAnimationBadConnectionView()
+		}
+	}
+	
+	func showBadConnectionAlert() {
+		DispatchQueue.main.async {
+			self.badConnectionView.viewType = .badConnection
+			self.startAnimationBadConnectionView()
+		}
+	}
+	
+	private func startAnimationBadConnectionView() {
+		self.badConnectionView.isHidden = false
+		UIView.animate(withDuration: 0.65, animations: {
+			self.badConnectionView.frame.origin = CGPoint(x: 0, y: self.view.frame.height - 45)
+		}) { (_) in
+			
+			DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(10)) {
+				
+				UIView.animate(withDuration: 0.65, animations: {
+					self.badConnectionView.frame.origin = CGPoint(x: 0, y: self.view.frame.height)
+				}) { (_) in
+					self.badConnectionView.isHidden = true
+				}
+			}
+			
+		}
+	}
+	
+}
 
 /*
 1. API giphy.com или любое на выбор.
