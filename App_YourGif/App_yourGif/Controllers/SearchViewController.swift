@@ -11,9 +11,9 @@ import UIKit
 class SearchViewController: UIViewController {
 	
 	private let emptyResultView = EmptyResultView(frame: .zero)
-	lazy var badConnectionView: BadConnectionView = {
+	lazy var badConnectionView: AlertView = {
 		let viewFrame = CGRect(x: 0, y: view.frame.height, width: view.frame.width, height: 45)
-		let bcv = BadConnectionView(frame: viewFrame, type: .badConnection)
+		let bcv = AlertView(frame: viewFrame, type: .badConnection)
 		bcv.isHidden = true
 		view.addSubview(bcv)
 		return bcv
@@ -68,6 +68,7 @@ class SearchViewController: UIViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		
 		configuratingElements()
 		setupNavigationBarAndSearchBar()
 		setupTapGesture()
@@ -112,7 +113,7 @@ extension SearchViewController {
 			resultCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
 			resultCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 			emptyResultView.centerXAnchor.constraint(equalTo: resultCollectionView.centerXAnchor),
-			emptyResultView.topAnchor.constraint(equalTo: resultCollectionView.topAnchor, constant: 64),
+			emptyResultView.topAnchor.constraint(equalTo: resultCollectionView.topAnchor, constant: 80),
 			emptyResultView.widthAnchor.constraint(equalTo: resultCollectionView.widthAnchor, multiplier: 0.3),
 			emptyResultView.heightAnchor.constraint(equalTo: emptyResultView.widthAnchor)
 		])
@@ -303,6 +304,13 @@ extension SearchViewController {
 //MARK: - HandleNetworkErrorsDelegate
 extension SearchViewController: HandleNetworkErrorsDelegate {
 	
+	func showIncorrectRequestAlert() {
+		DispatchQueue.main.async {
+			self.badConnectionView.viewType = .incorrectRequest
+			self.startAnimationBadConnectionView()
+		}
+	}
+	
 	func showNoInternetAlert() {
 		DispatchQueue.main.async {
 			self.badConnectionView.viewType = .noInternet
@@ -323,7 +331,7 @@ extension SearchViewController: HandleNetworkErrorsDelegate {
 			self.badConnectionView.frame.origin = CGPoint(x: 0, y: self.view.frame.height - 45)
 		}) { (_) in
 			
-			DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(10)) {
+			DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(3)) {
 				
 				UIView.animate(withDuration: 0.65, animations: {
 					self.badConnectionView.frame.origin = CGPoint(x: 0, y: self.view.frame.height)

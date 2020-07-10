@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		9A6DAA66698FFD3FE8E47EAA /* Pods_App_yourGif.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D6B3136C93EE8F426F3D61E5 /* Pods_App_yourGif.framework */; };
-		EB270DE924B7541800457177 /* BadConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB270DE824B7541800457177 /* BadConnectionView.swift */; };
+		EB270DE924B7541800457177 /* AlertView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB270DE824B7541800457177 /* AlertView.swift */; };
 		EB57AE9624AF8C0200931F9D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB57AE9524AF8C0200931F9D /* AppDelegate.swift */; };
 		EB57AE9824AF8C0200931F9D /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB57AE9724AF8C0200931F9D /* SceneDelegate.swift */; };
 		EB57AE9A24AF8C0200931F9D /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB57AE9924AF8C0200931F9D /* SearchViewController.swift */; };
@@ -28,7 +28,7 @@
 		1372815111B4EFA5DF4C3559 /* Pods-App_yourGif.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App_yourGif.release.xcconfig"; path = "Target Support Files/Pods-App_yourGif/Pods-App_yourGif.release.xcconfig"; sourceTree = "<group>"; };
 		D21CDED349CD28A7A9DBE4E9 /* Pods-App_yourGif.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App_yourGif.debug.xcconfig"; path = "Target Support Files/Pods-App_yourGif/Pods-App_yourGif.debug.xcconfig"; sourceTree = "<group>"; };
 		D6B3136C93EE8F426F3D61E5 /* Pods_App_yourGif.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App_yourGif.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		EB270DE824B7541800457177 /* BadConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadConnectionView.swift; sourceTree = "<group>"; };
+		EB270DE824B7541800457177 /* AlertView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertView.swift; sourceTree = "<group>"; };
 		EB57AE9224AF8C0200931F9D /* App_yourGif.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App_yourGif.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EB57AE9524AF8C0200931F9D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		EB57AE9724AF8C0200931F9D /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -133,7 +133,7 @@
 			children = (
 				EB57AEB024AF960900931F9D /* GifCell.swift */,
 				EBF38FDF24B73ED900A89917 /* EmptyResultView.swift */,
-				EB270DE824B7541800457177 /* BadConnectionView.swift */,
+				EB270DE824B7541800457177 /* AlertView.swift */,
 			);
 			name = Views;
 			sourceTree = "<group>";
@@ -271,7 +271,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EB57AEAE24AF95BC00931F9D /* SingleGifViewController.swift in Sources */,
-				EB270DE924B7541800457177 /* BadConnectionView.swift in Sources */,
+				EB270DE924B7541800457177 /* AlertView.swift in Sources */,
 				EB57AE9A24AF8C0200931F9D /* SearchViewController.swift in Sources */,
 				EB57AEB624B0BE9300931F9D /* NetworkService.swift in Sources */,
 				EB57AEB124AF960900931F9D /* GifCell.swift in Sources */,

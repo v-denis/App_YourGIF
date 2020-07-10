@@ -8,6 +8,13 @@
 
 import Foundation
 
+enum GifLimit: Int {
+	case low = 10
+	case medium = 26
+	case height = 50
+	case maximum = 100
+}
+
 enum Language: String {
 	case en
 	case ru
@@ -22,11 +29,13 @@ enum SearchGifError: String {
 protocol HandleNetworkErrorsDelegate: class {
 	func showBadConnectionAlert()
 	func showNoInternetAlert()
+	func showIncorrectRequestAlert()
 }
 
 class NetworkService {
 	
 	private let apiKey = "YFsBAOyyd4PtFMtBoy3ajbyaDDWI9r74"
+	private let baseURL = "https://api.giphy.com/v1/gifs/search"
 	private var baseUrlString: String {
 		return "https://api.giphy.com/v1/gifs/search?api_key=\(apiKey)&limit=24"
 	}
@@ -66,6 +75,7 @@ class NetworkService {
 				
 			}.resume()
 		} else {
+			delegate?.showIncorrectRequestAlert()
 			print("searchGifs: url generating error")
 			//Error handling
 		}
@@ -95,21 +105,26 @@ class NetworkService {
 	
 	private func generateQuerySearchUrl(from phrase: String) -> URL? {
 		//		CFStringTokenizerCopyBestStringLanguage(phrase as CFString, CFRange(location: 0, length: phrase.count))
-		var searchPhrase = phrase
-		if phrase.contains(" ") {
-			searchPhrase = phrase.split(separator: " ").joined(separator: "+")
-		}
+		guard let resultURL = URL(string: baseURL) else { return nil }
 		let language = determinePhraseLanguage(phrase: searchPhrase)
 		guard language != Language.unknown else { return nil }
-		let resultUrlString = baseUrlString + "&q=\(searchPhrase)" + "&lang=\(language)"
-		guard let urlAllowedString = resultUrlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
-		return URL(string: urlAllowedString)
+		var urlComponents = URLComponents(url: resultURL, resolvingAgainstBaseURL: false)
+		urlComponents?.queryItems = [
+			URLQueryItem(name: "api_key", value: apiKey),
+			URLQueryItem(name: "q", value: phrase),
+			URLQueryItem(name: "lang", value: language.rawValue),
+			URLQueryItem(name: "limit", value: "\(GifLimit.medium.rawValue)")
+			//Configure number of elements here!
+		]
+		guard let queryUrl = urlComponents?.url else { return nil }
+		return queryUrl
 	}
 	
 	private func determinePhraseLanguage(phrase: String) -> Language {
 		for scalar in phrase.unicodeScalars {
 			switch scalar.value {
 				case 65...90, 97...122: return Language.en
+				case 48...57: return Language.en //If numbers in phrase
 				case 1072...1103, 1040...1071: return Language.ru
 				default: continue
 			}
