@@ -59,7 +59,7 @@ class AlertView: UIView {
 				problemLabel.backgroundColor = .systemRed
 			case .incorrectRequest:
 				problemLabel.text = viewType.rawValue
-				problemLabel.backgroundColor = #colorLiteral(red: 0.7426140904, green: 0.6966595855, blue: 0.02882523975, alpha: 1)
+				problemLabel.backgroundColor = #colorLiteral(red: 0.698524102, green: 0.6536487615, blue: 0.02305808367, alpha: 1)
 		}
 	}
 	

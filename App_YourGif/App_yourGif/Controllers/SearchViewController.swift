@@ -11,13 +11,6 @@ import UIKit
 class SearchViewController: UIViewController {
 	
 	private let emptyResultView = EmptyResultView(frame: .zero)
-	lazy var badConnectionView: AlertView = {
-		let viewFrame = CGRect(x: 0, y: view.frame.height, width: view.frame.width, height: 45)
-		let bcv = AlertView(frame: viewFrame, type: .badConnection)
-		bcv.isHidden = true
-		view.addSubview(bcv)
-		return bcv
-	}()
 	private let networkService = NetworkService()
 	private var gifData: GifData? {
 		didSet {
@@ -44,12 +37,16 @@ class SearchViewController: UIViewController {
 		cv.delegate = self
 		return cv
 	}()
+	private var lastInsets: UIEdgeInsets = UIEdgeInsets()
 	private var cellInsets: UIEdgeInsets {
-		if UIDevice.current.orientation == .landscapeLeft ||
-			UIDevice.current.orientation == .landscapeRight {
-			return UIEdgeInsets(top: 32, left: 64, bottom: 32, right: 64)
+		if UIDevice.current.orientation == .portrait {
+			lastInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+			return lastInsets
+		} else if UIDevice.current.orientation == .unknown {
+			return lastInsets
 		} else {
-			return UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+			lastInsets = UIEdgeInsets(top: 32, left: 64, bottom: 32, right: 64)
+			return lastInsets
 		}
 	}
 	private lazy var portraitSideAnchors = [
@@ -64,37 +61,61 @@ class SearchViewController: UIViewController {
 		resultCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
 		resultCollectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
 	]
+	private lazy var problemAlertView: AlertView = {
+		let viewFrame = CGRect(x: 0, y: 45, width: view.frame.width, height: 45)
+		let bcv = AlertView(frame: viewFrame, type: .badConnection)
+		return bcv
+	}()
+	private var isSearchProblemExist: Bool = false {
+		didSet {
+			if isSearchProblemExist {
+				problemAlertView.isHidden = false
+			} else {
+				problemAlertView.isHidden = true
+			}
+		}
+	}
 	
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		
 		configuratingElements()
 		setupNavigationBarAndSearchBar()
 		setupTapGesture()
+		setupLayout()
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
-		setupLayout()
 		if downsizedGifStringUrls.isEmpty {
 			fetchGifs(withSearchText: defaultSearchPhrase)
 		}
 	}
 	
-	override func viewDidAppear(_ animated: Bool) {
-		super.viewDidAppear(animated)
-	}
 	
 	override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
 		super.viewWillTransition(to: size, with: coordinator)
 		guard resultCollectionView.superview != nil else { return }
 		self.resultCollectionView.collectionViewLayout.invalidateLayout()
 		self.setupSideAnchorsFor(orientation: UIDevice.current.orientation)
+		
 		coordinator.animate(alongsideTransition: { (_) in
 			self.view.layoutIfNeeded()
-		})
+			self.problemAlertView.frame = CGRect(x: 0, y: 45, width: self.view.frame.width, height: 45)
+		}) { (_) in
+			
+		}
 		
+	}
+	
+	override var inputAccessoryView: UIView? {
+		return problemAlertView
+		
+	}
+
+	//To show inputAccessoryView
+	override var canBecomeFirstResponder: Bool {
+		return true
 	}
 
 }
@@ -112,12 +133,13 @@ extension SearchViewController {
 		NSLayoutConstraint.activate([
 			resultCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
 			resultCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+			
 			emptyResultView.centerXAnchor.constraint(equalTo: resultCollectionView.centerXAnchor),
-			emptyResultView.topAnchor.constraint(equalTo: resultCollectionView.topAnchor, constant: 80),
+			emptyResultView.topAnchor.constraint(equalTo: resultCollectionView.topAnchor, constant: 32),
 			emptyResultView.widthAnchor.constraint(equalTo: resultCollectionView.widthAnchor, multiplier: 0.3),
 			emptyResultView.heightAnchor.constraint(equalTo: emptyResultView.widthAnchor)
 		])
-		
+		resultCollectionView.keyboardDismissMode = .onDrag
 		searchController.isActive = false
 		setupSideAnchorsFor(orientation: UIDevice.current.orientation)
 	}
@@ -153,6 +175,7 @@ extension SearchViewController {
 	}
 	
 	private func setupNavigationBarAndSearchBar() {
+		
 		navigationItem.hidesSearchBarWhenScrolling = false
 		searchController.hidesNavigationBarDuringPresentation = true
 		searchController.obscuresBackgroundDuringPresentation = false
@@ -161,6 +184,9 @@ extension SearchViewController {
 		searchController.searchBar.searchTextField.textColor = UIColor(named: "alwaysWhite")
 		searchController.searchBar.searchTextField.backgroundColor = UIColor(named: "textFieldColor")
 		searchController.searchBar.searchTextField.tintColor = .orange
+		searchController.searchBar.searchTextField.placeholder = "search GIF's"
+		searchController.searchBar.searchTextField.inputAccessoryView = problemAlertView
+		searchController.searchBar.searchTextField.delegate = self
 		navigationItem.searchController = searchController
 		navigationItem.backBarButtonItem = UIBarButtonItem(title: "Search", style: .plain, target: self, action: nil)
 		navigationController?.navigationBar.shadowImage = UIImage()
@@ -238,6 +264,7 @@ extension SearchViewController: UICollectionViewDelegateFlowLayout {
 extension SearchViewController {
 	
 	private func fetchGifs(withSearchText text: String) {
+		isSearchProblemExist = false
 		networkService.searchGifs(withPhrase: text) { (fetchedGifData) in
 			self.gifData = fetchedGifData
 		}
@@ -246,8 +273,8 @@ extension SearchViewController {
 }
 
 
-//MARK: - UISearchBarDelegate
-extension SearchViewController: UISearchBarDelegate {
+//MARK: - UISearchBarDelegate & UITextFieldDelegate
+extension SearchViewController: UISearchBarDelegate, UITextFieldDelegate {
 	
 	func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
 		searchBarFinishEditingAndChangeTitle(for: searchBar.text)
@@ -267,8 +294,13 @@ extension SearchViewController: UISearchBarDelegate {
 		if navigationItem.title != defaultSearchPhrase {
 			showDefaultResults()
 		}
-		searchBar.endEditing(true)
+		searchBar.searchTextField.resignFirstResponder()
+		becomeFirstResponder()
 		searchController.isActive = false
+	}
+	
+	func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+		return !isSearchProblemExist
 	}
 	
 	private func showDefaultResults() {
@@ -277,6 +309,8 @@ extension SearchViewController: UISearchBarDelegate {
 		searchController.searchBar.text = ""
 		navigationItem.title = defaultSearchPhrase
 	}
+	
+	
 	
 }
 
@@ -306,42 +340,33 @@ extension SearchViewController: HandleNetworkErrorsDelegate {
 	
 	func showIncorrectRequestAlert() {
 		DispatchQueue.main.async {
-			self.badConnectionView.viewType = .incorrectRequest
-			self.startAnimationBadConnectionView()
+			self.showAlert(withType: .incorrectRequest)
 		}
 	}
 	
 	func showNoInternetAlert() {
 		DispatchQueue.main.async {
-			self.badConnectionView.viewType = .noInternet
-			self.startAnimationBadConnectionView()
+			self.showAlert(withType: .noInternet)
 		}
 	}
 	
 	func showBadConnectionAlert() {
 		DispatchQueue.main.async {
-			self.badConnectionView.viewType = .badConnection
-			self.startAnimationBadConnectionView()
+			self.showAlert(withType: .badConnection)
 		}
 	}
 	
-	private func startAnimationBadConnectionView() {
-		self.badConnectionView.isHidden = false
-		UIView.animate(withDuration: 0.65, animations: {
-			self.badConnectionView.frame.origin = CGPoint(x: 0, y: self.view.frame.height - 45)
-		}) { (_) in
-			
-			DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(3)) {
-				
-				UIView.animate(withDuration: 0.65, animations: {
-					self.badConnectionView.frame.origin = CGPoint(x: 0, y: self.view.frame.height)
-				}) { (_) in
-					self.badConnectionView.isHidden = true
-				}
-			}
-			
+	private func showAlert(withType type: AlertType) {
+		problemAlertView.viewType = type
+		self.isSearchProblemExist = true
+		problemAlertView.frame = CGRect(x: 0, y: 45, width: self.view.frame.width, height: 45)
+		UIView.animate(withDuration: 0.5) {
+			self.problemAlertView.frame.origin.y -= 45
 		}
+		
 	}
+	
+
 	
 }
 
