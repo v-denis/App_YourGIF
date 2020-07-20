@@ -66,6 +66,13 @@ class SearchViewController: UIViewController {
 		let bcv = AlertView(frame: viewFrame, type: .badConnection)
 		return bcv
 	}()
+	private lazy var activityIndicator: UIActivityIndicatorView = {
+		let ai = UIActivityIndicatorView(style: .medium)
+		ai.color = UIColor(named: "whiteBlackColor")
+		ai.hidesWhenStopped = true
+		ai.translatesAutoresizingMaskIntoConstraints = false
+		return ai
+	}()
 	private var isSearchProblemExist: Bool = false {
 		didSet {
 			if isSearchProblemExist {
@@ -117,6 +124,11 @@ class SearchViewController: UIViewController {
 	override var canBecomeFirstResponder: Bool {
 		return true
 	}
+	
+	//Checking retain cycle
+	deinit {
+		print("Search View Controller deinited")
+	}
 
 }
 
@@ -129,16 +141,25 @@ extension SearchViewController {
 		view.addSubview(resultCollectionView)
 		emptyResultView.translatesAutoresizingMaskIntoConstraints = false
 		resultCollectionView.addSubview(emptyResultView)
+		searchController.searchBar.searchTextField.addSubview(activityIndicator)
 		
 		NSLayoutConstraint.activate([
 			resultCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
 			resultCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-			
+		])
+		
+		NSLayoutConstraint.activate([
 			emptyResultView.centerXAnchor.constraint(equalTo: resultCollectionView.centerXAnchor),
 			emptyResultView.topAnchor.constraint(equalTo: resultCollectionView.topAnchor, constant: 32),
 			emptyResultView.widthAnchor.constraint(equalTo: resultCollectionView.widthAnchor, multiplier: 0.3),
 			emptyResultView.heightAnchor.constraint(equalTo: emptyResultView.widthAnchor)
 		])
+		
+		NSLayoutConstraint.activate([
+			activityIndicator.trailingAnchor.constraint(equalTo: searchController.searchBar.searchTextField.trailingAnchor, constant: -28),
+			activityIndicator.centerYAnchor.constraint(equalTo: searchController.searchBar.searchTextField.centerYAnchor)
+		])
+		
 		resultCollectionView.keyboardDismissMode = .onDrag
 		searchController.isActive = false
 		setupSideAnchorsFor(orientation: UIDevice.current.orientation)
@@ -187,6 +208,7 @@ extension SearchViewController {
 		searchController.searchBar.searchTextField.placeholder = "search GIF's"
 		searchController.searchBar.searchTextField.inputAccessoryView = problemAlertView
 		searchController.searchBar.searchTextField.delegate = self
+		
 		navigationItem.searchController = searchController
 		navigationItem.backBarButtonItem = UIBarButtonItem(title: "Search", style: .plain, target: self, action: nil)
 		navigationController?.navigationBar.shadowImage = UIImage()
@@ -265,7 +287,11 @@ extension SearchViewController {
 	
 	private func fetchGifs(withSearchText text: String) {
 		isSearchProblemExist = false
+		activityIndicator.startAnimating()
 		networkService.searchGifs(withPhrase: text) { (fetchedGifData) in
+			DispatchQueue.main.async {
+				self.activityIndicator.stopAnimating()
+			}
 			self.gifData = fetchedGifData
 		}
 	}

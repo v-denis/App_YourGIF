@@ -21,6 +21,7 @@ class SingleGifViewController: UIViewController {
 		giv.layer.masksToBounds = true
 		return giv
 	}()
+	var viewControllerTitle: String?
 	var gifName: String?
 	var gifData: Data? {
 		didSet {
@@ -48,6 +49,7 @@ class SingleGifViewController: UIViewController {
 		ai.hidesWhenStopped = true
 		return ai
 	}()
+	lazy var shareBatButtonItem = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .done, target: self, action: #selector(handleShareButtonTapped(_:)))
 	
 	
     override func viewDidLoad() {
@@ -65,8 +67,13 @@ class SingleGifViewController: UIViewController {
 	}
 	
 	private func setupLayout() {
-		navigationItem.largeTitleDisplayMode = .never
 		
+		let imageV = UIImageView()
+		imageV.startAnimating()
+		
+		shareBatButtonItem.tintColor = .white
+		navigationItem.rightBarButtonItem = shareBatButtonItem
+		navigationItem.largeTitleDisplayMode = .never
 		view.backgroundColor = .black
 		view.addSubview(gifImageView)
 		gifImageView.addSubview(activityIndicator)
@@ -81,6 +88,26 @@ class SingleGifViewController: UIViewController {
 		])
 	}
 	
+	
+	@objc func handleShareButtonTapped(_ sender: UIBarButtonItem) {
+		
+		guard let shareGifData = gifData else { return }
+		
+		if let source = CGImageSourceCreateWithData(shareGifData as CFData, nil) {
+			
+			guard let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return }
+			let baseImage = UIImage(cgImage: cgImage)
+			let activityVC = UIActivityViewController(activityItems: [baseImage as Any], applicationActivities: nil)
+			activityVC.popoverPresentationController?.sourceView = self.view
+			self.present(activityVC, animated: true)
+			
+		} else {
+			let activityVC = UIActivityViewController(activityItems: [shareGifData as Any], applicationActivities: nil)
+			
+			activityVC.popoverPresentationController?.sourceView = self.view
+			self.present(activityVC, animated: true)
+		}
+	}
 	
 	deinit {
 		print("SingleGifViewController: deinited")

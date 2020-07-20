@@ -41,7 +41,6 @@ class GifCell: UICollectionViewCell {
 	}()
 	private let activityIndicator: UIActivityIndicatorView = {
 		let ai = UIActivityIndicatorView(style: .medium)
-		ai.tintColor = .lightGray
 		ai.color = .white
 		ai.translatesAutoresizingMaskIntoConstraints = false
 		ai.hidesWhenStopped = true
